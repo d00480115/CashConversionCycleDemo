@@ -90,3 +90,43 @@ footer { padding-bottom: 24px; }
   th, td { padding: 7px 3px; }
   section { padding: 12px; }
 }
+
+/* ---------- Levers (Part C) ---------- */
+.buttons { display: flex; gap: 8px; margin-bottom: 12px; }
+.buttons button {
+  flex: 1;
+  font: inherit;
+  font-weight: 600;
+  padding: 10px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+.buttons button:active { background: var(--accent); color: var(--card); }
+
+.lever { margin-bottom: 14px; }
+.lever label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
+.lever-line { display: flex; align-items: center; gap: 8px; }
+.lever-line input[type="range"] { flex: 1; min-width: 0; accent-color: var(--accent); }
+.lever-line input[type="number"] {
+  width: 5.5em;
+  font: inherit;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  text-align: right;
+}
+.unit { color: var(--muted); font-size: 0.85rem; }
+
+#lever-table { margin-top: 4px; }
+
+.results { margin: 14px 0 0; display: grid; gap: 10px; }
+.results > div { border-top: 1px solid var(--line); padding-top: 8px; }
+.results dt { font-size: 0.85rem; color: var(--muted); }
+.results dd { margin: 2px 0 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.results dd.note { font-weight: 400; font-size: 0.85rem; color: var(--muted); }
+.results .big dd:not(.note) { font-size: 1.4rem; color: var(--accent); }

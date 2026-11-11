@@ -148,6 +148,57 @@
     return { days: days, before: before, after: after, levers: levers, totalCashFreed: totalCashFreed };
   }
 
+  // ---------- Levers (Part C) ----------
+  // Revenue and COGS stay at their Before values. Each lever sets a number of days,
+  // and the balance it implies is days × annual COGS (or revenue) / days in year.
+
+  // The balance a number of days implies.
+  function balanceFromDays(daysValue, annualBase, days) { return daysValue * annualBase / days; }
+
+  // Interest saved each year = cash freed (up to the bank line's Before balance) × bank rate.
+  // Negative cash freed means more borrowing, which shows as a negative saving.
+  function interestSaved(cashFreed, bankLineBefore, rate) {
+    return Math.min(cashFreed, bankLineBefore) * rate;
+  }
+
+  // Days paid past the due date = DPO − net days, never less than zero.
+  function daysPastDue(dpoDays, netDays) { return Math.max(0, dpoDays - netDays); }
+
+  // Nominal annual cost of skipping the supplier discount = d / (1 − d) × days in year / (days paid − discount days).
+  // If DPO is within the discount period, ElectroMart takes the discount and there is no cost.
+  function discountCost(dpoDays, discount, discountDays, days) {
+    if (dpoDays <= discountDays) return { takesDiscount: true, rate: 0 };
+    return { takesDiscount: false, rate: discount / (1 - discount) * days / (dpoDays - discountDays) };
+  }
+
+  // Everything the levers show, for chosen DIO, DSO and DPO.
+  function scenario(statements, assumptions, chosen) {
+    const days = assumptions.days_in_year;
+    const b = statements.before;
+    const balances = {
+      inventory: balanceFromDays(chosen.dio, b.cogs, days),
+      accounts_receivable: balanceFromDays(chosen.dso, b.revenue, days),
+      accounts_payable: balanceFromDays(chosen.dpo, b.cogs, days)
+    };
+    const cashFreed = {
+      inventory: cashFreedByAsset(b.inventory, balances.inventory),
+      accounts_receivable: cashFreedByAsset(b.accounts_receivable, balances.accounts_receivable),
+      accounts_payable: cashFreedByLiability(b.accounts_payable, balances.accounts_payable)
+    };
+    const totalCashFreed = cashFreed.inventory + cashFreed.accounts_receivable + cashFreed.accounts_payable;
+    const bankLineBefore = b.notes_payable || 0;
+    return {
+      ccc: ccc(chosen.dio, chosen.dso, chosen.dpo),
+      balances: balances,
+      cashFreed: cashFreed,
+      totalCashFreed: totalCashFreed,
+      bankLineBefore: bankLineBefore,
+      interestSaved: interestSaved(totalCashFreed, bankLineBefore, assumptions.bank_rate),
+      daysPastDue: daysPastDue(chosen.dpo, assumptions.net_days),
+      discount: discountCost(chosen.dpo, assumptions.supplier_discount, assumptions.discount_days, days)
+    };
+  }
+
   // ---------- Formatting ----------
 
   function formatDays(n) {
@@ -161,13 +212,19 @@
   function formatNumber(n) {
     return Math.round(n).toLocaleString('en-US');
   }
+  function formatPercent(rate) {
+    const text = (Math.abs(rate) * 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+    return rate < 0 && Math.round(rate * 10000) !== 0 ? '−' + text : text;
+  }
 
   const api = {
     parseCsv: parseCsv, readStatements: readStatements, readAssumptions: readAssumptions,
     dio: dio, dso: dso, dpo: dpo, ccc: ccc, cycle: cycle,
     cashFreedByAsset: cashFreedByAsset, cashFreedByLiability: cashFreedByLiability, cashFromDays: cashFromDays,
     analyze: analyze,
-    formatDays: formatDays, formatDollars: formatDollars, formatNumber: formatNumber
+    balanceFromDays: balanceFromDays, interestSaved: interestSaved, daysPastDue: daysPastDue,
+    discountCost: discountCost, scenario: scenario,
+    formatDays: formatDays, formatDollars: formatDollars, formatNumber: formatNumber, formatPercent: formatPercent
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
